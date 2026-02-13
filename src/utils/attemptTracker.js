@@ -83,7 +83,7 @@ class AttemptTracker {
   }
 
   // Check if current attempt should fail (odd attempts fail, even attempts succeed)
-  shouldFail(_action) {
+  shouldFail() {
     // New behavior:
     // - If fail mode is enabled → ALWAYS fail
     // - If fail mode is disabled → ALWAYS succeed
@@ -96,7 +96,8 @@ class AttemptTracker {
   // Get attempt info for an action
   getAttemptInfo(action) {
     const count = this.getAttemptCount(action);
-    const shouldFail = this.shouldFail(action);
+    // Reason: fail mode is global; result doesn't depend on action in current design.
+    const shouldFail = this.shouldFail();
     return {
       count,
       shouldFail,
