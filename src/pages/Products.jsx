@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   Container,
   Grid,
@@ -47,7 +47,6 @@ const Products = ({ addToCart, showError }) => {
   const safeAddToCart = addToCart || (async () => true);
   const safeShowError = showError || (() => {});
   const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -80,9 +79,10 @@ const Products = ({ addToCart, showError }) => {
           productAPI.getCategories(),
         ]);
         
-        setProducts(productsData);
-        setFilteredProducts(productsData);
-        setCategories(categoriesData);
+        // Reason: external APIs can return unexpected shapes; normalize defensively.
+        // Also, keep `filteredProducts` derived from inputs to avoid inconsistent view model state.
+        setProducts(Array.isArray(productsData) ? productsData : []);
+        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
       } catch (err) {
         console.error('Error fetching data:', err);
         setError(err.message || 'Failed to load products');
@@ -94,9 +94,12 @@ const Products = ({ addToCart, showError }) => {
     fetchData();
   }, []);
 
-  // Filter and sort products when search, category, or sort changes
-  useEffect(() => {
-    let result = [...products];
+  // Derive view model from source-of-truth state.
+  // Reason: storing derived state (like `filteredProducts`) separately can temporarily diverge from
+  // inputs during async updates, which can trigger "computed view model is inconsistent" guards.
+  const filteredProducts = useMemo(() => {
+    const safeProducts = Array.isArray(products) ? products : [];
+    let result = safeProducts;
 
     // Apply search filter
     if (searchTerm.trim()) {
@@ -113,8 +116,21 @@ const Products = ({ addToCart, showError }) => {
       result = productAPI.sortProducts(result, sortBy);
     }
 
-    setFilteredProducts(result);
+    return result;
   }, [products, searchTerm, selectedCategory, sortBy]);
+
+  // Focused debug logging to help trace production inconsistencies when fail mode is enabled.
+  useEffect(() => {
+    const failModeEnabled = attemptTracker.getFailMode();
+    if (!failModeEnabled) return;
+    console.debug('[Products][debug] view model inputs', {
+      productsCount: Array.isArray(products) ? products.length : null,
+      filteredProductsCount: Array.isArray(filteredProducts) ? filteredProducts.length : null,
+      searchTerm,
+      selectedCategory,
+      sortBy,
+    });
+  }, [products, filteredProducts, searchTerm, selectedCategory, sortBy]);
 
 
   const handleAddToCart = async (product) => {

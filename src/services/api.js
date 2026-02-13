@@ -113,35 +113,44 @@ export const productAPI = {
 
   // Search products (client-side search since API doesn't support it)
   searchProducts(products, searchTerm) {
-    if (!searchTerm.trim()) return products;
-    
+    // Reason: keep search resilient to partial/malformed product payloads.
+    if (!Array.isArray(products) || !searchTerm?.trim?.()) return products;
+
     const term = searchTerm.toLowerCase();
-    return products.filter(product =>
-      product.title.toLowerCase().includes(term) ||
-      product.description.toLowerCase().includes(term) ||
-      product.category.toLowerCase().includes(term)
-    );
+    return products.filter((product) => {
+      const title = String(product?.title ?? '').toLowerCase();
+      const description = String(product?.description ?? '').toLowerCase();
+      const category = String(product?.category ?? '').toLowerCase();
+      return (
+        title.includes(term) ||
+        description.includes(term) ||
+        category.includes(term)
+      );
+    });
   },
 
   // Filter products by category
   filterProductsByCategory(products, category) {
-    if (!category || category === 'all') return products;
-    return products.filter(product => product.category === category);
+    // Reason: keep filters resilient to partial/malformed product payloads.
+    if (!Array.isArray(products) || !category || category === 'all') return products;
+    return products.filter((product) => product?.category === category);
   },
 
   // Sort products
   sortProducts(products, sortBy) {
+    // Reason: keep sorting resilient to partial/malformed product payloads.
+    if (!Array.isArray(products)) return products;
     const sortedProducts = [...products];
     
     switch (sortBy) {
       case 'price-low':
-        return sortedProducts.sort((a, b) => a.price - b.price);
+        return sortedProducts.sort((a, b) => (Number(a?.price) || 0) - (Number(b?.price) || 0));
       case 'price-high':
-        return sortedProducts.sort((a, b) => b.price - a.price);
+        return sortedProducts.sort((a, b) => (Number(b?.price) || 0) - (Number(a?.price) || 0));
       case 'name':
-        return sortedProducts.sort((a, b) => a.title.localeCompare(b.title));
+        return sortedProducts.sort((a, b) => String(a?.title ?? '').localeCompare(String(b?.title ?? '')));
       case 'rating':
-        return sortedProducts.sort((a, b) => b.rating.rate - a.rating.rate);
+        return sortedProducts.sort((a, b) => (Number(b?.rating?.rate) || 0) - (Number(a?.rating?.rate) || 0));
       default:
         return sortedProducts;
     }
