@@ -29,6 +29,9 @@ const About = () => {
 
   // Handle team member click - removed intentional error throwing
   const handleTeamMemberClick = (member) => {
+    // Reason: placeholder handler; keep signature for future interactive features.
+    // `void member` prevents lint unused-var while keeping intent clear.
+    void member;
     // Team member click functionality can be implemented here
   };
 
