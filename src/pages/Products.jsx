@@ -32,6 +32,7 @@ import {
   FilterList as FilterIcon,
   Sort as SortIcon,
   FavoriteBorder as FavoriteBorderIcon,
+  Favorite as FavoriteIcon,
   GridView as GridViewIcon,
   ViewList as ViewListViewIcon,
   KeyboardArrowUp as ArrowUpIcon,
@@ -40,12 +41,14 @@ import { useNavigate } from 'react-router-dom';
 import { productAPI } from '../services/api.js';
 import attemptTracker from '../utils/attemptTracker.js';
 
-const Products = ({ addToCart, showError }) => {
+const Products = ({ addToCart, showError, addToWishlist, isInWishlist }) => {
   const navigate = useNavigate();
   // Reason: this remote is rendered by the shell, which owns cart + snackbar state.
   // Provide safe fallbacks for isolated rendering/tests.
   const safeAddToCart = addToCart || (async () => true);
   const safeShowError = showError || (() => {});
+  const safeAddToWishlist = addToWishlist || (() => {});
+  const safeIsInWishlist = isInWishlist || (() => false);
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -276,33 +279,6 @@ const Products = ({ addToCart, showError }) => {
             },
           }}
         />
-        
-        {/* Quick Actions Overlay */}
-        <Box 
-          sx={{
-            position: 'absolute',
-            top: 16,
-            right: 16,
-            opacity: 0,
-            transition: 'opacity 0.3s ease-in-out',
-            '&:hover': {
-              opacity: 1,
-            },
-          }}
-        >
-          <IconButton
-            size="small"
-            sx={{
-              background: 'rgba(255, 255, 255, 0.9)',
-              backdropFilter: 'blur(10px)',
-              '&:hover': {
-                background: 'rgba(255, 255, 255, 1)',
-              },
-            }}
-          >
-            <FavoriteBorderIcon fontSize="small" />
-          </IconButton>
-        </Box>
 
         {/* Category Badge */}
         <Chip
@@ -384,41 +360,65 @@ const Products = ({ addToCart, showError }) => {
           >
             ${product.price}
           </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<CartIcon />}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleAddToCart(product);
-            }}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-            onMouseUp={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-            sx={{ 
-              textTransform: 'none',
-              fontWeight: 600,
-              borderRadius: 2,
-              px: 3,
-              py: 1.5,
-              fontSize: '0.9rem',
-              cursor: 'pointer',
-              position: 'relative',
-              zIndex: 10,
-              '&:hover': {
-                transform: 'translateY(-2px)',
-                boxShadow: '0px 8px 25px rgba(0, 0, 0, 0.15)',
-              },
-            }}
-          >
-            Add to Cart
-          </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <IconButton
+              aria-label="Add to wishlist"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                safeAddToWishlist(product);
+              }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onMouseUp={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              sx={{
+                border: '1px solid rgba(0,0,0,0.12)',
+                borderRadius: 2,
+              }}
+            >
+              {safeIsInWishlist(product.id) ? <FavoriteIcon sx={{ color: '#d32f2f' }} /> : <FavoriteBorderIcon />}
+            </IconButton>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<CartIcon />}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleAddToCart(product);
+              }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onMouseUp={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              sx={{ 
+                textTransform: 'none',
+                fontWeight: 600,
+                borderRadius: 2,
+                px: 3,
+                py: 1.5,
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                position: 'relative',
+                zIndex: 10,
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0px 8px 25px rgba(0, 0, 0, 0.15)',
+                },
+              }}
+            >
+              Add to Cart
+            </Button>
+          </Box>
         </Box>
       </CardContent>
     </Card>
