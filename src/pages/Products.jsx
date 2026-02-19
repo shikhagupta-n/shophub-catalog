@@ -245,7 +245,10 @@ const Products = ({ addToCart, showError, addToWishlist, isInWishlist }) => {
   // Premium product card component
   const ProductCard = ({ product }) => (
     <Card 
-      onClick={() => navigate(`/product/${product.id}`)}
+      onClick={(e) => {
+        if (e?.target?.closest?.('[data-stop-product-nav="true"]')) return;
+        navigate(`/product/${product.id}`);
+      }}
       sx={{ 
         height: 500, 
         display: 'flex', 
@@ -363,6 +366,7 @@ const Products = ({ addToCart, showError, addToWishlist, isInWishlist }) => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <IconButton
               aria-label="Add to wishlist"
+              data-stop-product-nav="true"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -387,6 +391,7 @@ const Products = ({ addToCart, showError, addToWishlist, isInWishlist }) => {
               variant="contained"
               color="primary"
               startIcon={<CartIcon />}
+              data-stop-product-nav="true"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
