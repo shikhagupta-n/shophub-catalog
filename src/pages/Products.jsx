@@ -245,10 +245,6 @@ const Products = ({ addToCart, showError, addToWishlist, isInWishlist }) => {
   // Premium product card component
   const ProductCard = ({ product }) => (
     <Card 
-      onClick={(e) => {
-        if (e?.target?.closest?.('[data-stop-product-nav="true"]')) return;
-        navigate(`/product/${product.id}`);
-      }}
       sx={{ 
         height: 500, 
         display: 'flex', 
@@ -264,7 +260,10 @@ const Products = ({ addToCart, showError, addToWishlist, isInWishlist }) => {
       }}
     >
       {/* Product Image */}
-      <Box sx={{ position: 'relative', overflow: 'hidden', height: 300 }}>
+      <Box
+        onClick={() => navigate(`/product/${product.id}`)}
+        sx={{ position: 'relative', overflow: 'hidden', height: 300, cursor: 'pointer' }}
+      >
         <CardMedia
           component="img"
           height="300"
@@ -300,54 +299,56 @@ const Products = ({ addToCart, showError, addToWishlist, isInWishlist }) => {
       </Box>
 
       <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 3 }}>
-        <Typography 
-          gutterBottom 
-          variant="h6" 
-          component="h2" 
-          sx={{ 
-            fontWeight: 600,
-            lineHeight: 1.3,
-            mb: 1,
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            fontSize: '1.1rem',
-            minHeight: '2.6em',
-          }}
-        >
-          {product.title}
-        </Typography>
-        
-        <Typography 
-          variant="body2" 
-          color="text.secondary" 
-          sx={{ 
-            mb: 2, 
-            flexGrow: 1,
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            lineHeight: 1.5,
-            fontSize: '0.9rem',
-            minHeight: '2.625em',
-          }}
-        >
-          {product.description}
-        </Typography>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Rating 
-            value={product.rating.rate} 
-            precision={0.1} 
-            size="small" 
-            readOnly 
-            sx={{ mr: 1 }}
-          />
-          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
-            ({product.rating.count})
+        <Box onClick={() => navigate(`/product/${product.id}`)} sx={{ cursor: 'pointer' }}>
+          <Typography 
+            gutterBottom 
+            variant="h6" 
+            component="h2" 
+            sx={{ 
+              fontWeight: 600,
+              lineHeight: 1.3,
+              mb: 1,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              fontSize: '1.1rem',
+              minHeight: '2.6em',
+            }}
+          >
+            {product.title}
           </Typography>
+          
+          <Typography 
+            variant="body2" 
+            color="text.secondary" 
+            sx={{ 
+              mb: 2, 
+              flexGrow: 1,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              lineHeight: 1.5,
+              fontSize: '0.9rem',
+              minHeight: '2.625em',
+            }}
+          >
+            {product.description}
+          </Typography>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <Rating 
+              value={product.rating.rate} 
+              precision={0.1} 
+              size="small" 
+              readOnly 
+              sx={{ mr: 1 }}
+            />
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+              ({product.rating.count})
+            </Typography>
+          </Box>
         </Box>
 
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 'auto' }}>
