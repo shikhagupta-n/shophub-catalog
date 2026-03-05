@@ -125,14 +125,16 @@ const Products = ({ addToCart, showError, addToWishlist, isInWishlist }) => {
     const failModeEnabled = attemptTracker.getFailMode();
     if (failModeEnabled) {
       try {
-        products.meta.quantity += 1;
+        // Fixed: `products` is an array state and has no `.meta` property.
+        // Accessing `products.meta.quantity` threw TypeError because `products.meta` is undefined.
+        // Instead, make the simulated fetch and throw a controlled error for the catch block.
         await fetch(`/api/cart/add`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ productId: product.id, quantity: 1 }),
         });
-      }catch (error) {
-        // NOTE: Zipy removed from all repos; keep console logging for debugging.
+        throw new TypeError('Cannot update cart: product metadata is unavailable');
+      } catch (error) {
         console.error(error);
         safeShowError(errorMessage);
         return;
