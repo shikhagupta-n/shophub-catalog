@@ -134,10 +134,12 @@ const ProductDetail = ({ addToCart, cartItems = [], showError, showSuccess }) =>
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ quantity: newQuantity }),
         });
-        // Trigger a TypeError that looks like a genuine runtime issue
-        const item = null;
-        // eslint-disable-next-line no-unused-vars
-        const value = item.quantity;
+        // Reason: previously this intentionally triggered a TypeError (null access).
+        // That pattern can surface as noisy production errors if fail mode is accidentally enabled,
+        // so we simulate a controlled failure without dereferencing null/undefined.
+        const simulatedError = new Error('Simulated cart quantity update failure (fail mode).');
+        simulatedError.name = 'SimulatedFailModeError';
+        throw simulatedError;
       } catch (error) {
         // NOTE: Zipy removed from all repos; keep console logging for debugging.
         console.error(error);
@@ -161,25 +163,19 @@ const ProductDetail = ({ addToCart, cartItems = [], showError, showSuccess }) =>
       const failModeEnabled = attemptTracker.getFailMode();
       
       if (failModeEnabled) {
-        // Simulate a real network call, then surface a genuine JS runtime error
         try {
           await fetch('/api/cart/add', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ productId: safeProduct.id, quantity }),
           });
-          // Intentional runtime TypeError to look like a genuine failure
-          const item = undefined;
-          // eslint-disable-next-line no-unused-vars
-          const value = item.cartQuantity;
         } catch (error) {
           // NOTE: Zipy removed from all repos; keep console logging for debugging.
           console.error(error);
-          safeShowError(`Failed to add ${safeProduct.title} to cart. Please try again.`);
-          return;
-        } finally {
-          setAddingToCart(false);
         }
+        // Reason: fail mode is used to exercise UI error paths; avoid intentionally
+        // dereferencing null/undefined (which can surface as noisy production TypeErrors).
+        safeShowError(`Failed to add ${safeProduct.title} to cart. Please try again.`);
         return;
       }
       
