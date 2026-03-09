@@ -1,6 +1,20 @@
 // Utility to track attempt counts for different actions
 // Implements the pattern: odd attempts fail, even attempts succeed
 
+const isProductionBuild = () => {
+  // Reason: webpack apps typically inline `process.env.NODE_ENV` at build time, but
+  // we defensively guard to avoid crashing in unusual runtimes.
+  try {
+    const nodeEnv = typeof globalThis !== 'undefined'
+      && globalThis.process
+      && globalThis.process.env
+      && globalThis.process.env.NODE_ENV;
+    return nodeEnv === 'production';
+  } catch {
+    return false;
+  }
+};
+
 class AttemptTracker {
   constructor() {
     // Store attempt counts in localStorage for persistence across sessions
@@ -9,6 +23,17 @@ class AttemptTracker {
     
     // Global toggle for fail/success pattern
     this.failModeEnabled = this.loadFailMode();
+
+    // Reason: fail mode intentionally triggers runtime errors for demo/debug flows.
+    // It must never be enabled in production builds (including if a user has a stale
+    // localStorage flag from prior development sessions).
+    this._warnedProdFailMode = false;
+    if (isProductionBuild() && this.failModeEnabled) {
+      this.failModeEnabled = false;
+      this.clearPersistedFailMode();
+      // Minimal signal for production debugging; avoids noisy logs on every page load.
+      console.warn('[AttemptTracker] Fail mode was persisted but is disabled in production.');
+    }
   }
 
   // Load attempt counts from localStorage
@@ -16,7 +41,7 @@ class AttemptTracker {
     try {
       const saved = localStorage.getItem(this.storageKey);
       return saved ? JSON.parse(saved) : {};
-    } catch (error) {
+    } catch {
       // Error loading attempt counts.
       return {};
     }
@@ -26,7 +51,7 @@ class AttemptTracker {
   saveCounts() {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(this.counts));
-    } catch (error) {
+    } catch {
       // Error saving attempt counts.
     }
   }
@@ -48,7 +73,7 @@ class AttemptTracker {
     try {
       const saved = localStorage.getItem('ecommerce_fail_mode');
       return saved ? JSON.parse(saved) : false; // Default to false (success mode)
-    } catch (error) {
+    } catch {
       // Error loading fail mode setting.
       return false;
     }
@@ -58,13 +83,30 @@ class AttemptTracker {
   saveFailMode() {
     try {
       localStorage.setItem('ecommerce_fail_mode', JSON.stringify(this.failModeEnabled));
-    } catch (error) {
+    } catch {
       // Error saving fail mode setting.
+    }
+  }
+
+  // Clear persisted fail mode setting (used to prevent production crashes)
+  clearPersistedFailMode() {
+    try {
+      localStorage.removeItem('ecommerce_fail_mode');
+    } catch {
+      // Error clearing fail mode setting.
     }
   }
 
   // Toggle fail mode
   toggleFailMode() {
+    if (isProductionBuild()) {
+      // Reason: prevent enabling crash-simulation behavior in production.
+      if (!this._warnedProdFailMode) {
+        this._warnedProdFailMode = true;
+        console.warn('[AttemptTracker] Ignoring fail mode toggle in production.');
+      }
+      return false;
+    }
     this.failModeEnabled = !this.failModeEnabled;
     this.saveFailMode();
     return this.failModeEnabled;
@@ -72,6 +114,14 @@ class AttemptTracker {
 
   // Explicitly set fail mode
   setFailMode(enabled) {
+    if (isProductionBuild()) {
+      // Reason: prevent enabling crash-simulation behavior in production.
+      if (!this._warnedProdFailMode) {
+        this._warnedProdFailMode = true;
+        console.warn('[AttemptTracker] Ignoring fail mode change in production.');
+      }
+      return false;
+    }
     this.failModeEnabled = Boolean(enabled);
     this.saveFailMode();
     return this.failModeEnabled;
@@ -79,11 +129,13 @@ class AttemptTracker {
 
   // Get current fail mode status
   getFailMode() {
+    // Reason: even if something toggles the in-memory flag, production must always be safe.
+    if (isProductionBuild()) return false;
     return this.failModeEnabled;
   }
 
   // Check if current attempt should fail (odd attempts fail, even attempts succeed)
-  shouldFail(action) {
+  shouldFail() {
     // New behavior:
     // - If fail mode is enabled → ALWAYS fail
     // - If fail mode is disabled → ALWAYS succeed
